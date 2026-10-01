@@ -31,7 +31,7 @@ estimateForm.addEventListener('submit', (event) => {
     const subject = encodeURIComponent(`Estimate Request - ${service}`);
     const body = encodeURIComponent(`Name: ${name}\nEmail: ${email}\nService: ${service}\n\nProject Details:\n${details}`);
 
-    window.location.href = `mailto:test@test.com?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:luisin_cortes34@hotmail.com?subject=${subject}&body=${body}`;
 
     estimateForm.querySelector('.form-message').textContent = 'Thanks. Your estimate request is on its way.';
     setTimeout(() => {

@@ -20,22 +20,29 @@ document.querySelector('nav a[href="#services"]').addEventListener('click', (eve
     history.replaceState(null, '', '#services');
 });
 
-estimateForm.addEventListener('submit', (event) => {
+const emailjsPublicKey = 'LyjO55R6H5D2p_VK';
+const emailjsServiceId = 'service_4nlmjgm';
+const emailjsTemplateId = 'template_m5922y2';
+emailjs.init({ publicKey: emailjsPublicKey });
+
+estimateForm.addEventListener('submit', async (event) => {
     event.preventDefault();
 
-    const name = estimateForm.querySelector('input[name="name"]').value;
-    const email = estimateForm.querySelector('input[name="email"]').value;
-    const service = estimateForm.querySelector('select[name="service"]').value;
-    const details = estimateForm.querySelector('textarea[name="details"]').value;
+    const formMessage = estimateForm.querySelector('.form-message');
+    const submitButton = estimateForm.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
 
-    const subject = encodeURIComponent(`Estimate Request - ${service}`);
-    const body = encodeURIComponent(`Name: ${name}\nEmail: ${email}\nService: ${service}\n\nProject Details:\n${details}`);
+    try {
+        await emailjs.sendForm(emailjsServiceId, emailjsTemplateId, estimateForm);
 
-    window.location.href = `mailto:test@test.com?subject=${subject}&body=${body}`;
-
-    estimateForm.querySelector('.form-message').textContent = 'Thanks. Your estimate request is on its way.';
-    setTimeout(() => {
-        estimateForm.querySelector('.form-message').textContent = '';
-    }, 5000);
-    estimateForm.reset();
+        formMessage.textContent = 'Thanks. Your estimate request is on its way.';
+        estimateForm.reset();
+    } catch (error) {
+        formMessage.textContent = 'Something went wrong. Please call us or try again.';
+    } finally {
+        submitButton.disabled = false;
+        setTimeout(() => {
+            formMessage.textContent = '';
+        }, 5000);
+    }
 });

@@ -20,7 +20,7 @@ document.querySelector('nav a[href="#services"]').addEventListener('click', (eve
     history.replaceState(null, '', '#services');
 });
 
-const emailjsPublicKey = 'LyjO55R6H5D2p_VK';
+const emailjsPublicKey = 'LyjO55R6HN5D2p_VK';
 const emailjsServiceId = 'service_4nlmjgm';
 const emailjsTemplateId = 'template_m5922y2';
 emailjs.init({ publicKey: emailjsPublicKey });

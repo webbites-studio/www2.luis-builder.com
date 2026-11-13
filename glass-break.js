@@ -19,10 +19,7 @@
         'pointer-events:none;transition:opacity .4s}' +
         '.gb-shake{animation:gb-shake .18s}' +
         '@keyframes gb-shake{25%{transform:translate(-4px,3px)}50%{transform:translate(4px,-3px)}75%{transform:translate(-2px,-2px)}}' +
-        '.gb-shards{position:fixed;inset:0;z-index:2147483647;pointer-events:none;overflow:hidden}' +
-        '.gb-shard{position:absolute;inset:0;background:linear-gradient(135deg,rgba(140,190,205,.45),rgba(20,40,60,.5));' +
-        'animation:gb-fall var(--d) cubic-bezier(.5,0,.9,.6) forwards}' +
-        '@keyframes gb-fall{to{transform:translate(var(--x),110vh) rotate(var(--r));opacity:.2}}' +
+        '.gb-shards{position:fixed;left:0;top:0;width:100%;height:100%;z-index:2147483647;pointer-events:none}' +
         'html.gb-locked,html.gb-locked body{overflow:hidden!important;height:100%}';
     document.head.appendChild(style);
 
@@ -109,8 +106,16 @@
     }
 
     function shatter() {
-        var wrap = document.createElement('div');
-        wrap.className = 'gb-shards';
+        // One canvas instead of many full-screen DOM layers: iOS Safari runs out of memory on those.
+        var dpr = Math.min(window.devicePixelRatio || 1, 2);
+        var W = innerWidth, H = innerHeight;
+        var sc = document.createElement('canvas');
+        sc.className = 'gb-shards';
+        sc.width = W * dpr;
+        sc.height = H * dpr;
+        var sx = sc.getContext('2d');
+        sx.scale(dpr, dpr);
+        var shards = [];
         var cols = 9, rows = 6, jit = 0.35;
         var grid = [];
         for (var j = 0; j <= rows; j++) {
@@ -124,14 +129,13 @@
             }
         }
         function tri(a, b, c) {
-            var s = document.createElement('div');
-            s.className = 'gb-shard';
-            s.style.clipPath = 'polygon(' + [a, b, c].map(function (p) { return p[0] + '% ' + p[1] + '%'; }).join(',') + ')';
-            s.style.setProperty('--d', rnd(.8, 1.6) + 's');
-            s.style.setProperty('--x', rnd(-120, 120) + 'px');
-            s.style.setProperty('--r', rnd(-40, 40) + 'deg');
-            s.style.animationDelay = rnd(0, .25) + 's';
-            wrap.appendChild(s);
+            var pts = [a, b, c].map(function (p) { return [p[0] / 100 * W, p[1] / 100 * H]; });
+            shards.push({
+                pts: pts,
+                cx: (pts[0][0] + pts[1][0] + pts[2][0]) / 3,
+                cy: (pts[0][1] + pts[1][1] + pts[2][1]) / 3,
+                vx: rnd(-60, 60), delay: rnd(0, 250), rot: rnd(-.7, .7)
+            });
         }
         for (var y = 0; y < rows; y++) {
             for (var x = 0; x < cols; x++) {
@@ -140,8 +144,32 @@
                 tri(p, r, s2);
             }
         }
-        document.body.appendChild(wrap);
-        setTimeout(function () { wrap.remove(); }, 2200);
+        document.body.appendChild(sc);
+        var start = performance.now(), DUR = 1500;
+        (function frame(now) {
+            var t = now - start;
+            sx.clearRect(0, 0, W, H);
+            var alive = false;
+            shards.forEach(function (s) {
+                var k = (t - s.delay) / DUR;
+                if (k >= 1) return;
+                alive = true;
+                k = Math.max(k, 0);
+                var dy = k * k * H * 1.2, dx = s.vx * k, a = s.rot * k;
+                sx.save();
+                sx.translate(s.cx + dx, s.cy + dy);
+                sx.rotate(a);
+                sx.beginPath();
+                s.pts.forEach(function (p, i) { i ? sx.lineTo(p[0] - s.cx, p[1] - s.cy) : sx.moveTo(p[0] - s.cx, p[1] - s.cy); });
+                sx.closePath();
+                sx.fillStyle = 'rgba(70,115,135,' + (.4 * (1 - k * .7)) + ')';
+                sx.fill();
+                sx.strokeStyle = 'rgba(255,255,255,.5)';
+                sx.stroke();
+                sx.restore();
+            });
+            if (alive) requestAnimationFrame(frame); else sc.remove();
+        })(start);
     }
 
     function breakGlass() {
